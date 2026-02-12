@@ -5,6 +5,7 @@ const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/tokens/${BUTT_MI
 const BTC_CIRCULATING_SUPPLY = 19850000;
 
 const REFRESH_MS = 10000;
+const REFRESH_SECONDS = Math.max(1, Math.floor(REFRESH_MS / 1000));
 const TARGET_BUTT = 10000;
 
 const el = {
@@ -26,10 +27,15 @@ const state = {
 };
 
 let updateInFlight = false;
+let secondsUntilNext = REFRESH_SECONDS;
 
 function setStatus(msg, isError = false) {
   el.status.textContent = msg;
   el.status.className = isError ? "err" : "";
+}
+
+function setCountdownStatus() {
+  setStatus(`updating in ${secondsUntilNext}s`);
 }
 
 function formatUsd(value) {
@@ -68,10 +74,10 @@ function formatMcap(value) {
 function funnyLine(x) {
   if (x == null || !Number.isFinite(x)) return "Calibrating butt-powered rockets...";
   if (x <= 1) return "Target hit. Cheeks have achieved escape velocity.";
-  if (x <= 2) return "One spicy candle and we moon.";
+  if (x <= 2) return "Clenchins at these levels.";
   if (x <= 10) return "Turbo butt mode required.";
   if (x <= 100) return "Serious glute gains needed.";
-  if (x <= 1000) return "Summon the council of mega butts.";
+  if (x <= 1000) return "Summoning the council of mega clenchers.";
   return "Intergalactic cheek propulsion required.";
 }
 
@@ -143,6 +149,7 @@ async function fetchButtMarketData() {
 async function updateMarketData() {
   if (updateInFlight) return;
   updateInFlight = true;
+  setStatus("fetching latest...");
 
   try {
     const [btcUsd, butt] = await Promise.all([fetchBtcPriceUsd(), fetchButtMarketData()]);
@@ -150,15 +157,21 @@ async function updateMarketData() {
     state.buttUsd = butt.priceUsd;
     state.buttMcap = butt.marketCap;
     render();
-    setStatus("Market data updated");
   } catch (err) {
     setStatus(`Update failed: ${String(err)}`, true);
   } finally {
     updateInFlight = false;
+    secondsUntilNext = REFRESH_SECONDS;
   }
 }
 
 await updateMarketData();
 setInterval(() => {
-  void updateMarketData();
-}, REFRESH_MS);
+  if (updateInFlight) return;
+  if (secondsUntilNext <= 0) {
+    void updateMarketData();
+    return;
+  }
+  setCountdownStatus();
+  secondsUntilNext -= 1;
+}, 1000);

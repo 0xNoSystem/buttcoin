@@ -33,9 +33,8 @@
           Helvetica,
           Arial,
           sans-serif;
-        display: grid;
-        place-items: center;
         padding: 24px;
+        overflow-x: auto;
       }
 
       .top-links {
@@ -79,8 +78,9 @@
       }
 
       .app {
-        width: min(980px, 100%);
+        width: 980px;
         text-align: center;
+        margin: 0 auto;
       }
 
       h1 {
@@ -262,31 +262,6 @@
         color: #d93025;
       }
 
-      @media (max-width: 920px) {
-        .center-row {
-          grid-template-columns: 1fr;
-          gap: 12px;
-          max-width: 340px;
-        }
-
-        .mcap {
-          order: 0;
-        }
-
-        .coin {
-          width: min(250px, 68vw);
-        }
-
-        .equals {
-          order: 0;
-        }
-  
-        .coin-blurbs {
-          grid-template-columns: 1fr;
-          max-width: 340px;
-          gap: 12px;
-        }
-      }
     </style>
   </head>
   <body>

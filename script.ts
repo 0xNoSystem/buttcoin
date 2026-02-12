@@ -34,6 +34,7 @@ const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/tokens/${BUTT_MI
 const BTC_CIRCULATING_SUPPLY = 19_850_000;
 
 const REFRESH_MS = 10_000;
+const REFRESH_SECONDS = Math.max(1, Math.floor(REFRESH_MS / 1000));
 const TARGET_BUTT = 10_000;
 
 const el = {
@@ -59,10 +60,15 @@ const state: {
 };
 
 let updateInFlight = false;
+let secondsUntilNext = REFRESH_SECONDS;
 
 function setStatus(msg: string, isError = false): void {
   el.status.textContent = msg;
   el.status.className = isError ? "err" : "";
+}
+
+function setCountdownStatus(): void {
+  setStatus(`updating in ${secondsUntilNext}s`);
 }
 
 function formatUsd(value: number | null): string {
@@ -176,6 +182,7 @@ async function fetchButtMarketData(): Promise<{ priceUsd: number; marketCap: num
 async function updateMarketData(): Promise<void> {
   if (updateInFlight) return;
   updateInFlight = true;
+  setStatus("fetching latest...");
 
   try {
     const [btcUsd, butt] = await Promise.all([fetchBtcPriceUsd(), fetchButtMarketData()]);
@@ -183,15 +190,21 @@ async function updateMarketData(): Promise<void> {
     state.buttUsd = butt.priceUsd;
     state.buttMcap = butt.marketCap;
     render();
-    setStatus("Market data updated");
   } catch (err) {
     setStatus(`Update failed: ${String(err)}`, true);
   } finally {
     updateInFlight = false;
+    secondsUntilNext = REFRESH_SECONDS;
   }
 }
 
 await updateMarketData();
 setInterval(() => {
-  void updateMarketData();
-}, REFRESH_MS);
+  if (updateInFlight) return;
+  if (secondsUntilNext <= 0) {
+    void updateMarketData();
+    return;
+  }
+  setCountdownStatus();
+  secondsUntilNext -= 1;
+}, 1000);
