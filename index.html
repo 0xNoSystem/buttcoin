@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BUTTCOIN vs Bitcoin</title>
+    <link rel="icon" type="image/jpeg" href="./public/buttcoinjpeg.jpg" />
     <style>
       :root {
         --bg: #ffffff;
@@ -148,6 +149,36 @@
         line-height: 1;
       }
 
+      .coin-blurbs {
+        margin: -4px auto 18px;
+        max-width: 920px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      .blurb {
+        border: 1px solid var(--line);
+        background: #fffdf8;
+        border-radius: 12px;
+        padding: 12px 14px;
+        text-align: left;
+        font-size: 14px;
+        line-height: 1.45;
+        color: #333333;
+      }
+
+      .blurb-title {
+        margin-bottom: 6px;
+        color: var(--accent);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .blurb p {
+        margin: 0;
+      }
+
       .ratio {
         margin-top: 12px;
       }
@@ -249,6 +280,12 @@
         .equals {
           order: 0;
         }
+  
+        .coin-blurbs {
+          grid-template-columns: 1fr;
+          max-width: 340px;
+          gap: 12px;
+        }
       }
     </style>
   </head>
@@ -280,7 +317,7 @@
           <img id="btcImage" src="./public/bitcoinjpeg.jpeg" alt="Bitcoin" />
         </div>
 
-        <div class="equals">=</div>
+        <div class="equals"> ...... </div>
 
         <div class="coin">
           <img id="buttImage" src="./public/buttcoinjpeg.jpg" alt="BUTTCOIN" />
@@ -290,6 +327,17 @@
           <div class="mcap-k">BUTTCOIN Market Cap</div>
           <div class="mcap-v" id="buttMcap">--</div>
         </div>
+      </section>
+
+      <section class="coin-blurbs">
+        <article class="blurb">
+          <div class="blurb-title">Bitcoin</div>
+          <p>Bitcoin is a peer-to-peer digital currency. Peer-to-peer means that no central authority issues new bitcoins or tracks transactions. It runs on a decentralized network where participants verify and record transfers on a public ledger called the blockchain.</p>
+        </article>
+        <article class="blurb">
+          <div class="blurb-title">Buttcoin</div>
+          <p>Buttcoin is a peer-to-peer butt. Peer-to-peer means that no central authority issues new butts or tracks butts. It's Bitcoin, but with Butts!</p>
+        </article>
       </section>
 
       <section class="ratio">
