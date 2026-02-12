@@ -33,8 +33,8 @@
           Helvetica,
           Arial,
           sans-serif;
-        padding: 24px;
-        overflow-x: auto;
+        padding: clamp(12px, 3vw, 24px);
+        overflow-x: hidden;
       }
 
       .top-links {
@@ -78,7 +78,7 @@
       }
 
       .app {
-        width: 980px;
+        width: min(980px, 100%);
         text-align: center;
         margin: 0 auto;
       }
@@ -143,7 +143,7 @@
 
       .mcap-v {
         color: var(--accent);
-        font-size: 20px;
+        font-size: clamp(16px, 2.2vw, 20px);
         font-weight: 800;
         font-variant-numeric: tabular-nums;
         line-height: 1;
@@ -260,6 +260,68 @@
 
       .err {
         color: #d93025;
+      }
+
+      @media (max-width: 920px) {
+        .top-links {
+          top: 10px;
+          right: 10px;
+          gap: 8px;
+        }
+
+        .icon-btn {
+          width: 36px;
+          height: 36px;
+        }
+
+        .center-row {
+          margin: 24px auto 18px;
+          max-width: 560px;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          grid-template-areas:
+            "btcCoin buttCoin"
+            "btcCap buttCap"
+            "eq eq";
+          gap: 12px;
+        }
+
+        .center-row > :nth-child(1) {
+          grid-area: btcCap;
+        }
+
+        .center-row > :nth-child(2) {
+          grid-area: btcCoin;
+        }
+
+        .center-row > :nth-child(3) {
+          grid-area: eq;
+          justify-self: center;
+        }
+
+        .center-row > :nth-child(4) {
+          grid-area: buttCoin;
+        }
+
+        .center-row > :nth-child(5) {
+          grid-area: buttCap;
+        }
+
+        .coin {
+          width: min(42vw, 190px);
+        }
+
+        .equals {
+          font-size: clamp(20px, 6vw, 34px);
+        }
+
+        .coin-blurbs {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+
+        .stats {
+          grid-template-columns: 1fr;
+        }
       }
 
     </style>
