@@ -47,13 +47,6 @@ function formatUsd(value) {
   }).format(value);
 }
 
-function formatRatio(value) {
-  if (value == null || !Number.isFinite(value)) return "--";
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
 function formatX(value) {
   if (value == null || !Number.isFinite(value)) return "--x";
   if (value >= 1000) return `${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}x`;
@@ -94,10 +87,11 @@ function render() {
       ? state.btcUsd / state.buttUsd
       : null;
 
+  const targetButtPrice = state.btcUsd != null ? state.btcUsd / TARGET_BUTT : null;
   const xNeeded = ratio != null ? ratio / TARGET_BUTT : null;
   const btcMcap = state.btcUsd != null ? state.btcUsd * BTC_CIRCULATING_SUPPLY : null;
 
-  el.ratioMain.textContent = ratio != null ? formatRatio(ratio) : "--";
+  el.ratioMain.textContent = targetButtPrice != null ? formatUsd(targetButtPrice) : "--";
   el.xNeeded.textContent = formatX(xNeeded);
   el.xJoke.textContent = funnyLine(xNeeded);
   el.buttMcap.textContent = formatMcap(state.buttMcap);
