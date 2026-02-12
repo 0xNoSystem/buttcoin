@@ -277,42 +277,24 @@
 
         .center-row {
           margin: 24px auto 18px;
-          max-width: 560px;
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-          grid-template-areas:
-            "btcCoin buttCoin"
-            "btcCap buttCap"
-            "eq eq";
+          width: 100%;
+          max-width: 440px;
+          grid-template-columns: 1fr;
           gap: 12px;
         }
 
-        .center-row > :nth-child(1) {
-          grid-area: btcCap;
-        }
-
-        .center-row > :nth-child(2) {
-          grid-area: btcCoin;
-        }
-
-        .center-row > :nth-child(3) {
-          grid-area: eq;
-          justify-self: center;
-        }
-
-        .center-row > :nth-child(4) {
-          grid-area: buttCoin;
-        }
-
-        .center-row > :nth-child(5) {
-          grid-area: buttCap;
-        }
-
         .coin {
-          width: min(42vw, 190px);
+          width: min(72vw, 260px);
         }
 
         .equals {
           font-size: clamp(20px, 6vw, 34px);
+        }
+
+        .mcap {
+          width: 100%;
+          max-width: 320px;
+          margin: 0 auto;
         }
 
         .coin-blurbs {
