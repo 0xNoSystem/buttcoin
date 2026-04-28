@@ -103,6 +103,36 @@
         font-size: 15px;
       }
 
+      .strategy-link-wrap {
+        margin-top: 18px;
+      }
+
+      .strategy-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: 1px solid #d67c00;
+        background: var(--accent);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        transition:
+          transform 120ms ease,
+          box-shadow 120ms ease,
+          background 120ms ease;
+      }
+
+      .strategy-link:hover {
+        background: #de840a;
+        box-shadow: 0 8px 20px rgba(247, 147, 26, 0.25);
+        transform: translateY(-1px);
+      }
+
       .center-row {
         margin: 38px auto 28px;
         display: grid;
@@ -333,6 +363,10 @@
 
     <main class="app">
       <h1>How many BUTTCOIN for 1 Bitcoin?</h1>
+
+      <div class="strategy-link-wrap">
+        <a class="strategy-link" href="./strategy/">Open Strategy View</a>
+      </div>
 
       <section class="center-row">
         <div class="mcap">
