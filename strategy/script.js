@@ -175,6 +175,18 @@ function getDisplayedStrategyStats(purchases, acquiredKey) {
   };
 }
 
+function getRecordCountLabel(kind) {
+  return kind === "buttcoin" ? "trades" : "purchases";
+}
+
+function getEmptyRecordLabel(kind) {
+  return kind === "buttcoin" ? "No trades" : "No purchases";
+}
+
+function getCountMetricLabel(kind) {
+  return kind === "buttcoin" ? "Trades" : "Purchases";
+}
+
 function createMetric(label, value, extraClass = "") {
   const card = document.createElement("article");
   card.className = "metric";
@@ -278,8 +290,9 @@ function renderAsset(kind, payload, currentPriceUsd) {
   const metricsEl = kind === "bitcoin" ? el.btcMetrics : el.buttMetrics;
   const txListEl = kind === "bitcoin" ? el.btcTransactions : el.buttTransactions;
   const trackedWallet = kind === "buttcoin" ? payload?.trackedWallet ?? "" : "";
+  const recordCountLabel = getRecordCountLabel(kind);
 
-  metaEl.textContent = `${payload?.count ?? 0} purchases`;
+  metaEl.textContent = `${payload?.count ?? 0} ${recordCountLabel}`;
   currentPriceEl.textContent =
     kind === "bitcoin"
       ? formatUsd(currentPriceUsd, 1)
@@ -300,7 +313,7 @@ function renderAsset(kind, payload, currentPriceUsd) {
     holdingsValueEl.textContent = "--";
     marketValueEl.textContent = "--";
     pnlPillEl.className = "pnl-pill hero-pnl-value pnl-neutral";
-    pnlPillEl.textContent = "No purchases";
+    pnlPillEl.textContent = getEmptyRecordLabel(kind);
     pnlRangeEl.textContent = "-- - now";
     return;
   }
@@ -334,7 +347,7 @@ function renderAsset(kind, payload, currentPriceUsd) {
   pnlRangeEl.textContent = `${formatDateOnly(firstPurchaseDate)} - now`;
 
   metricsEl.append(
-    createMetric("Purchases", String(payload?.count ?? purchases.length)),
+    createMetric(getCountMetricLabel(kind), String(payload?.count ?? purchases.length)),
     createMetric("Average cost basis", formatUsd(averageCostBasisUsd, config.averageCostDigits)),
     createMetric("Total cost basis", formatUsdSmart(totalCostBasisUsd)),
   );
@@ -342,19 +355,28 @@ function renderAsset(kind, payload, currentPriceUsd) {
   [...purchases].reverse().forEach((purchase) => {
     const acquired = Number(purchase[config.acquiredKey] ?? 0);
     const purchaseValueUsd = Number(purchase.purchaseValueUsd ?? 0);
+    const isButtcoinSell = kind === "buttcoin" && acquired < 0;
+    const displayedAcquired = isButtcoinSell ? Math.abs(acquired) : acquired;
+    const displayedPurchaseValueUsd = isButtcoinSell
+      ? Math.abs(purchaseValueUsd)
+      : purchaseValueUsd;
     const currentValueUsd =
-      Number.isFinite(currentPriceUsd) && Number.isFinite(acquired)
-        ? acquired * currentPriceUsd
+      Number.isFinite(currentPriceUsd) && Number.isFinite(displayedAcquired)
+        ? displayedAcquired * currentPriceUsd
         : null;
     const rowPnlUsd =
-      currentValueUsd != null && Number.isFinite(purchaseValueUsd)
-        ? currentValueUsd - purchaseValueUsd
+      !isButtcoinSell && currentValueUsd != null && Number.isFinite(displayedPurchaseValueUsd)
+        ? currentValueUsd - displayedPurchaseValueUsd
         : null;
     const rowPnlPercent =
-      rowPnlUsd != null && purchaseValueUsd > 0 ? (rowPnlUsd / purchaseValueUsd) * 100 : null;
+      rowPnlUsd != null && displayedPurchaseValueUsd > 0
+        ? (rowPnlUsd / displayedPurchaseValueUsd) * 100
+        : null;
+    const tradeSideLabel = isButtcoinSell ? "Sell" : "Buy";
 
     const card = document.createElement("article");
-    card.className = "tx-card";
+    card.className =
+      kind === "buttcoin" ? `tx-card tx-card-${tradeSideLabel.toLowerCase()}` : "tx-card";
 
     const top = document.createElement("div");
     top.className = "tx-top";
@@ -366,22 +388,33 @@ function renderAsset(kind, payload, currentPriceUsd) {
 
     const subEl = document.createElement("div");
     subEl.className = "tx-sub";
-    subEl.textContent = formatDate(purchase.timestamp || purchase.date);
+    subEl.textContent =
+      kind === "buttcoin"
+        ? `${tradeSideLabel} - ${formatDate(purchase.timestamp || purchase.date)}`
+        : formatDate(purchase.timestamp || purchase.date);
 
     dateWrap.append(dateEl, subEl);
 
     const pnlEl = document.createElement("div");
-    pnlEl.className = `pnl-pill ${getPnlClass(rowPnlUsd)}`;
-    pnlEl.textContent = buildPnlLabel(rowPnlUsd, rowPnlPercent);
+    pnlEl.className = `pnl-pill ${isButtcoinSell ? "pnl-neutral" : getPnlClass(rowPnlUsd)}`;
+    pnlEl.textContent = isButtcoinSell
+      ? tradeSideLabel
+      : buildPnlLabel(rowPnlUsd, rowPnlPercent);
 
     top.append(dateWrap, pnlEl);
 
     const grid = document.createElement("div");
     grid.className = "tx-grid";
     grid.append(
-      createTxField("Acquired", formatVolume(acquired)),
-      createTxField("Buy price", formatUsd(Number(purchase.purchasePriceUsd ?? 0), 6)),
-      createTxField("Purchase value", formatUsdSmart(purchaseValueUsd)),
+      createTxField(isButtcoinSell ? "Sold" : "Acquired", formatVolume(displayedAcquired)),
+      createTxField(
+        isButtcoinSell ? "Sell price" : "Buy price",
+        formatUsd(Number(purchase.purchasePriceUsd ?? 0), 6),
+      ),
+      createTxField(
+        isButtcoinSell ? "Sale value" : "Purchase value",
+        formatUsdSmart(displayedPurchaseValueUsd),
+      ),
       createTxField("Current value", formatUsdSmart(currentValueUsd)),
     );
 
@@ -409,7 +442,7 @@ function renderAsset(kind, payload, currentPriceUsd) {
 
       grid.append(
         createTxField(
-          "Spend",
+          isButtcoinSell ? "Receive" : "Spend",
           purchase.spendTokenSymbol && purchase.spendAmount != null
             ? `${formatVolume(Number(purchase.spendAmount ?? 0))} ${purchase.spendTokenSymbol}`
             : "--",
