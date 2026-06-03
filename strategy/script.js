@@ -224,6 +224,32 @@ function createTxField(label, value, extraClass = "") {
   return wrapper;
 }
 
+function createSourceField(value, linkConfig = null) {
+  const wrapper = document.createElement("div");
+
+  const labelEl = document.createElement("div");
+  labelEl.className = "tx-item-label";
+  labelEl.textContent = "Source";
+
+  const valueEl = document.createElement("div");
+  valueEl.className = "tx-item-value";
+  valueEl.textContent = value;
+
+  wrapper.append(labelEl, valueEl);
+
+  if (linkConfig?.href) {
+    const link = document.createElement("a");
+    link.className = "filing-link tx-link";
+    link.href = linkConfig.href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = linkConfig.text;
+    wrapper.append(link);
+  }
+
+  return wrapper;
+}
+
 async function fetchJson(path) {
   const response = await fetch(`${BACKEND_BASE_URL}${path}`, {
     cache: "no-store",
@@ -356,6 +382,7 @@ function renderAsset(kind, payload, currentPriceUsd) {
     const acquired = Number(purchase[config.acquiredKey] ?? 0);
     const purchaseValueUsd = Number(purchase.purchaseValueUsd ?? 0);
     const isSell = acquired < 0;
+    const assetLabel = kind === "bitcoin" ? "BTC" : "Buttcoin";
     const displayedAcquired = isSell ? Math.abs(acquired) : acquired;
     const displayedPurchaseValueUsd = isSell ? Math.abs(purchaseValueUsd) : purchaseValueUsd;
     const currentValueUsd =
@@ -395,80 +422,31 @@ function renderAsset(kind, payload, currentPriceUsd) {
 
     top.append(dateWrap, pnlEl);
 
+    const sourceValue = kind === "buttcoin" ? (purchase.source ?? "--") : "Strategy";
+    const sourceLink =
+      kind === "buttcoin"
+        ? {
+            href: purchase.txHash ? `${SOLSCAN_TX_BASE_URL}${purchase.txHash}` : "",
+            text: "Open on Solscan",
+          }
+        : {
+            href: config.filingUrlKey ? (purchase[config.filingUrlKey] ?? "") : "",
+            text: "Open filing",
+          };
+
     const grid = document.createElement("div");
     grid.className = "tx-grid";
     grid.append(
-      createTxField(isSell ? "Sold" : "Acquired", formatVolume(displayedAcquired)),
+      createTxField("Side", tradeSideLabel),
+      createTxField("Amount", `${formatVolume(displayedAcquired)} ${assetLabel}`),
       createTxField(
-        isSell ? "Sell price" : "Buy price",
+        "Price",
         formatUsd(Number(purchase.purchasePriceUsd ?? 0), 6),
       ),
-      createTxField(
-        isSell ? "Sale value" : "Purchase value",
-        formatUsdSmart(displayedPurchaseValueUsd),
-      ),
+      createTxField("Value", formatUsdSmart(displayedPurchaseValueUsd)),
       createTxField("Current value", formatUsdSmart(currentValueUsd)),
+      createSourceField(sourceValue, sourceLink),
     );
-
-    if (kind === "buttcoin") {
-      const sourceField = document.createElement("div");
-      const sourceLabel = document.createElement("div");
-      sourceLabel.className = "tx-item-label";
-      sourceLabel.textContent = "Source";
-      sourceField.append(sourceLabel);
-
-      const sourceValue = document.createElement("div");
-      sourceValue.className = "tx-item-value";
-      sourceValue.textContent = purchase.source ?? "--";
-      sourceField.append(sourceValue);
-
-      if (purchase.txHash) {
-        const link = document.createElement("a");
-        link.className = "filing-link tx-link";
-        link.href = `${SOLSCAN_TX_BASE_URL}${purchase.txHash}`;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = "Open on Solscan";
-        sourceField.append(link);
-      }
-
-      grid.append(
-        createTxField(
-          isSell ? "Receive" : "Spend",
-          purchase.spendTokenSymbol && purchase.spendAmount != null
-            ? `${formatVolume(Number(purchase.spendAmount ?? 0))} ${purchase.spendTokenSymbol}`
-            : "--",
-        ),
-        sourceField,
-      );
-    } else {
-      const filingUrl = config.filingUrlKey ? purchase[config.filingUrlKey] : null;
-      const filingField = document.createElement("div");
-      const label = document.createElement("div");
-      label.className = "tx-item-label";
-      label.textContent = "Filing";
-      filingField.append(label);
-
-      if (filingUrl) {
-        const link = document.createElement("a");
-        link.className = "filing-link";
-        link.href = filingUrl;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = "Open filing";
-        filingField.append(link);
-      } else {
-        const value = document.createElement("div");
-        value.className = "tx-item-value";
-        value.textContent = "--";
-        filingField.append(value);
-      }
-
-      grid.append(
-        createTxField(isSell ? "BTC sold" : "BTC acquired", formatVolume(displayedAcquired)),
-        filingField,
-      );
-    }
 
     card.append(top, grid);
     txListEl.append(card);
