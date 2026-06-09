@@ -40,10 +40,12 @@ function setCountdownStatus() {
 
 function formatUsd(value) {
   if (value == null || !Number.isFinite(value)) return "--";
+  const max_digits = value > 1000 ? 2 : 4;
+
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 4,
+    maximumFractionDigits: max_digits,
   }).format(value);
 }
 
