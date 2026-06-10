@@ -1,7 +1,7 @@
 const BTC_FEED_ID = "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43";
-const BUTT_MINT = "Cm6fNnMk7NfzStP9CZpsQA2v3jjzbcYGAxdJySmHpump";
+const BUTT_POOL_ID = "FFcYgSSgWHforA9rXXkA48p8YFoz8TSW85Jpo3CQHDyS";
 const PYTH_HERMES = "https://hermes.pyth.network";
-const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/tokens/${BUTT_MINT}`;
+const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/pairs/solana/${BUTT_POOL_ID}`;
 const SOLSCAN_TX_BASE_URL = "https://solscan.io/tx/";
 const DEFAULT_BACKEND_BASE_URL = "https://edgar-nameless-dream-788.fly.dev";
 const LIVE_PRICE_REFRESH_INTERVAL_MS = 10_000;
@@ -289,11 +289,7 @@ async function fetchButtPriceUsd() {
   }
 
   const payload = await response.json();
-  const pairs = (payload.pairs ?? [])
-    .filter((pair) => Number(pair.priceUsd) > 0)
-    .sort((left, right) => (right.liquidity?.usd ?? 0) - (left.liquidity?.usd ?? 0));
-
-  const best = pairs[0];
+  const best = payload.pair ?? payload.pairs?.[0];
   const priceUsd = Number(best?.priceUsd ?? 0);
 
   if (!Number.isFinite(priceUsd) || priceUsd <= 0) {

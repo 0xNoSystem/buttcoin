@@ -1,7 +1,7 @@
 const BTC_FEED_ID = "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43";
-const BUTT_MINT = "Cm6fNnMk7NfzStP9CZpsQA2v3jjzbcYGAxdJySmHpump";
+const BUTT_POOL_ID = "FFcYgSSgWHforA9rXXkA48p8YFoz8TSW85Jpo3CQHDyS";
 const PYTH_HERMES = "https://hermes.pyth.network";
-const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/tokens/${BUTT_MINT}`;
+const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/pairs/solana/${BUTT_POOL_ID}`;
 const BTC_CIRCULATING_SUPPLY = 19850000;
 
 const REFRESH_MS = 10000;
@@ -122,13 +122,7 @@ async function fetchButtMarketData() {
   if (!res.ok) throw new Error(`Dexscreener HTTP ${res.status}`);
 
   const payload = await res.json();
-  const pairs = payload.pairs ?? [];
-
-  const sorted = pairs
-    .filter((p) => Number(p.priceUsd) > 0)
-    .sort((a, b) => (b.liquidity?.usd ?? 0) - (a.liquidity?.usd ?? 0));
-
-  const best = sorted[0];
+  const best = payload.pair ?? payload.pairs?.[0];
   const priceUsd = Number(best?.priceUsd ?? 0);
   const marketCapRaw = Number(best?.marketCap ?? best?.fdv ?? 0);
 
