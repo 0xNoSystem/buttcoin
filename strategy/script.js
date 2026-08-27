@@ -1,6 +1,6 @@
-const BTC_FEED_ID = "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43";
 const BUTT_POOL_ID = "FFcYgSSgWHforA9rXXkA48p8YFoz8TSW85Jpo3CQHDyS";
-const PYTH_HERMES = "https://hermes.pyth.network";
+const COINGECKO_BTC_PRICE_URL =
+  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
 const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/pairs/solana/${BUTT_POOL_ID}`;
 const SOLSCAN_TX_BASE_URL = "https://solscan.io/tx/";
 const DEFAULT_BACKEND_BASE_URL = "https://edgar-nameless-dream-788.fly.dev";
@@ -263,22 +263,20 @@ async function fetchJson(path) {
 }
 
 async function fetchBtcPriceUsd() {
-  const feed = `0x${BTC_FEED_ID}`;
-  const url = `${PYTH_HERMES}/v2/updates/price/latest?ids[]=${encodeURIComponent(feed)}&parsed=true`;
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(COINGECKO_BTC_PRICE_URL, { cache: "no-store" });
 
   if (!response.ok) {
-    throw new Error(`Pyth HTTP ${response.status}`);
+    throw new Error(`CoinGecko HTTP ${response.status}`);
   }
 
   const payload = await response.json();
-  const entry = payload.parsed?.[0]?.price;
+  const priceUsd = Number(payload.bitcoin?.usd ?? 0);
 
-  if (!entry) {
-    throw new Error("Pyth parsed price missing");
+  if (!Number.isFinite(priceUsd) || priceUsd <= 0) {
+    throw new Error("CoinGecko BTC/USD price missing");
   }
 
-  return Number(entry.price) * 10 ** Number(entry.expo);
+  return priceUsd;
 }
 
 async function fetchButtPriceUsd() {

@@ -1,6 +1,6 @@
-const BTC_FEED_ID = "e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43";
 const BUTT_POOL_ID = "FFcYgSSgWHforA9rXXkA48p8YFoz8TSW85Jpo3CQHDyS";
-const PYTH_HERMES = "https://hermes.pyth.network";
+const COINGECKO_BTC_PRICE_URL =
+  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
 const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/pairs/solana/${BUTT_POOL_ID}`;
 const BTC_CIRCULATING_SUPPLY = 19850000;
 
@@ -102,19 +102,17 @@ function render() {
 }
 
 async function fetchBtcPriceUsd() {
-  const feed = `0x${BTC_FEED_ID}`;
-  const url = `${PYTH_HERMES}/v2/updates/price/latest?ids[]=${encodeURIComponent(feed)}&parsed=true`;
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Pyth HTTP ${res.status}`);
+  const res = await fetch(COINGECKO_BTC_PRICE_URL, { cache: "no-store" });
+  if (!res.ok) throw new Error(`CoinGecko HTTP ${res.status}`);
 
   const payload = await res.json();
-  const entry = payload.parsed?.[0]?.price;
-  if (!entry) throw new Error("Pyth parsed price missing");
+  const priceUsd = Number(payload.bitcoin?.usd ?? 0);
 
-  const raw = Number(entry.price);
-  const expo = Number(entry.expo);
-  return raw * 10 ** expo;
+  if (!Number.isFinite(priceUsd) || priceUsd <= 0) {
+    throw new Error("CoinGecko BTC/USD price missing");
+  }
+
+  return priceUsd;
 }
 
 async function fetchButtMarketData() {
