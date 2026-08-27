@@ -1,6 +1,19 @@
 const BUTT_POOL_ID = "FFcYgSSgWHforA9rXXkA48p8YFoz8TSW85Jpo3CQHDyS";
-const COINGECKO_BTC_PRICE_URL =
-  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
+const BTC_PRICE_SOURCES = [
+  {
+    name: "Coinbase",
+    url: "https://api.coinbase.com/v2/prices/BTC-USD/spot",
+    getPrice: (payload) => Number(payload.data?.amount ?? 0),
+  },
+  {
+    name: "Kraken",
+    url: "https://api.kraken.com/0/public/Ticker?pair=XBTUSD",
+    getPrice: (payload) => {
+      const ticker = Object.values(payload.result ?? {})[0];
+      return Number(ticker?.c?.[0] ?? 0);
+    },
+  },
+];
 const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/pairs/solana/${BUTT_POOL_ID}`;
 const SOLSCAN_TX_BASE_URL = "https://solscan.io/tx/";
 const DEFAULT_BACKEND_BASE_URL = "https://edgar-nameless-dream-788.fly.dev";
@@ -263,20 +276,29 @@ async function fetchJson(path) {
 }
 
 async function fetchBtcPriceUsd() {
-  const response = await fetch(COINGECKO_BTC_PRICE_URL, { cache: "no-store" });
+  const errors = [];
 
-  if (!response.ok) {
-    throw new Error(`CoinGecko HTTP ${response.status}`);
+  for (const source of BTC_PRICE_SOURCES) {
+    try {
+      const response = await fetch(source.url, { cache: "no-store" });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const priceUsd = source.getPrice(await response.json());
+
+      if (!Number.isFinite(priceUsd) || priceUsd <= 0) {
+        throw new Error("BTC/USD price missing");
+      }
+
+      return priceUsd;
+    } catch (error) {
+      errors.push(`${source.name}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
-  const payload = await response.json();
-  const priceUsd = Number(payload.bitcoin?.usd ?? 0);
-
-  if (!Number.isFinite(priceUsd) || priceUsd <= 0) {
-    throw new Error("CoinGecko BTC/USD price missing");
-  }
-
-  return priceUsd;
+  throw new Error(`BTC/USD unavailable (${errors.join("; ")})`);
 }
 
 async function fetchButtPriceUsd() {

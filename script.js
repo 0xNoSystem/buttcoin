@@ -1,6 +1,19 @@
 const BUTT_POOL_ID = "FFcYgSSgWHforA9rXXkA48p8YFoz8TSW85Jpo3CQHDyS";
-const COINGECKO_BTC_PRICE_URL =
-  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
+const BTC_PRICE_SOURCES = [
+  {
+    name: "Coinbase",
+    url: "https://api.coinbase.com/v2/prices/BTC-USD/spot",
+    getPrice: (payload) => Number(payload.data?.amount ?? 0),
+  },
+  {
+    name: "Kraken",
+    url: "https://api.kraken.com/0/public/Ticker?pair=XBTUSD",
+    getPrice: (payload) => {
+      const ticker = Object.values(payload.result ?? {})[0];
+      return Number(ticker?.c?.[0] ?? 0);
+    },
+  },
+];
 const DEXSCREENER_URL = `https://api.dexscreener.com/latest/dex/pairs/solana/${BUTT_POOL_ID}`;
 const BTC_CIRCULATING_SUPPLY = 19850000;
 
@@ -102,17 +115,29 @@ function render() {
 }
 
 async function fetchBtcPriceUsd() {
-  const res = await fetch(COINGECKO_BTC_PRICE_URL, { cache: "no-store" });
-  if (!res.ok) throw new Error(`CoinGecko HTTP ${res.status}`);
+  const errors = [];
 
-  const payload = await res.json();
-  const priceUsd = Number(payload.bitcoin?.usd ?? 0);
+  for (const source of BTC_PRICE_SOURCES) {
+    try {
+      const response = await fetch(source.url, { cache: "no-store" });
 
-  if (!Number.isFinite(priceUsd) || priceUsd <= 0) {
-    throw new Error("CoinGecko BTC/USD price missing");
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const priceUsd = source.getPrice(await response.json());
+
+      if (!Number.isFinite(priceUsd) || priceUsd <= 0) {
+        throw new Error("BTC/USD price missing");
+      }
+
+      return priceUsd;
+    } catch (error) {
+      errors.push(`${source.name}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
-  return priceUsd;
+  throw new Error(`BTC/USD unavailable (${errors.join("; ")})`);
 }
 
 async function fetchButtMarketData() {
@@ -140,11 +165,32 @@ async function updateMarketData() {
   setStatus("fetching latest...");
 
   try {
-    const [btcUsd, butt] = await Promise.all([fetchBtcPriceUsd(), fetchButtMarketData()]);
-    state.btcUsd = btcUsd;
-    state.buttUsd = butt.priceUsd;
-    state.buttMcap = butt.marketCap;
+    const [btcResult, buttResult] = await Promise.allSettled([
+      fetchBtcPriceUsd(),
+      fetchButtMarketData(),
+    ]);
+
+    if (btcResult.status === "fulfilled") {
+      state.btcUsd = btcResult.value;
+    }
+
+    if (buttResult.status === "fulfilled") {
+      state.buttUsd = buttResult.value.priceUsd;
+      state.buttMcap = buttResult.value.marketCap;
+    }
+
+    if (btcResult.status === "rejected" && buttResult.status === "rejected") {
+      throw new Error(
+        `all price feeds failed: ${String(btcResult.reason)}; ${String(buttResult.reason)}`,
+      );
+    }
+
     render();
+
+    if (btcResult.status === "rejected" || buttResult.status === "rejected") {
+      const failedFeed = btcResult.status === "rejected" ? "BTC" : "BUTTCOIN";
+      setStatus(`Updated; ${failedFeed} price feed is temporarily unavailable.`, true);
+    }
   } catch (err) {
     setStatus(`Update failed: ${String(err)}`, true);
   } finally {
